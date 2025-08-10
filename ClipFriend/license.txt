@@ -1,0 +1,13 @@
+
+
+ClipFriend License (Non-Commercial, Attribution, No Misrepresentation)
+
+Copyright © 2025 Ryan Dobron
+
+Permission is granted to use, view, and modify this software for personal, non-commercial purposes, provided that all copies or substantial portions of the software include this copyright notice and license.
+
+You must give appropriate credit to the original author (“Ryan Dobron”) in any distribution or public use of this software.
+
+Commercial use, redistribution for profit, sublicensing, or re-releasing this software (modified or unmodified) under your own name or branding without explicit written permission from the author is strictly prohibited.
+
+This software is provided “as is”, without warranty of any kind, express or implied.

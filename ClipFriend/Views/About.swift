@@ -12,7 +12,7 @@ struct About: View {
         NavigationStack
         {
             VStack{
-                    Text("Version 2")
+                    Text("Version 1")
                     .padding()
                     .font(.headline)
                     Text("Made by Ryan Dobron")
