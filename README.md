@@ -4,6 +4,7 @@
 **Last Updated:** August 2025
 
 Need help? Email: **rakhmieldev@gmail.com**
+Or text me on Telegram: **@rakhmieldev**
 
 ## What is ClipFriend?
 ClipFriend is a lightweight macOS clipboard history tool that lives in the menu bar.
@@ -23,4 +24,4 @@ ClipFriend collects **no data**. See the full policy:
 - **Large images slow?** Thumbnails are generated; try clearing history.
 
 ## Contact
-For bugs, feature requests, or questions: **rakhmieldev@gmail.com**
+For bugs, feature requests, or questions: **rakhmieldev@gmail.com** or on telegram **@rakhmieldev**
