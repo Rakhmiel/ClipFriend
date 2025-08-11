@@ -15,7 +15,7 @@ ClipFriend is a lightweight macOS clipboard history tool that lives in the menu 
 
 ## Privacy
 ClipFriend collects **no data**. See the full policy:
-[Privacy Policy]([https://your-site-or-github-pages/privacy.html](https://github.com/Rakhmiel/ClipFriend/blob/main/Privacy.txt))
+[Privacy Policy](https://github.com/Rakhmiel/ClipFriend/blob/main/Privacy.txt)
 
 ## Troubleshooting
 - **No icon in Dock?** The app is menu-bar only.
