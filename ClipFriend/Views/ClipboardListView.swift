@@ -16,12 +16,13 @@ struct ClipboardListView: View {
     var body: some View {
         NavigationStack
         {
-            VStack{
-                HStack{
+            ScrollViewReader { proxy in
+                VStack{
+                    HStack{
                         NavigationLink(
                             destination: About(),
                             label: {
-                                Text("􀅴")
+                                Image(systemName: "info.circle")
                             })
                         .padding(.horizontal)
                         .padding(.top)
@@ -33,36 +34,42 @@ struct ClipboardListView: View {
                         NavigationLink(
                             destination: SettingsView(),
                             label: {
-                                Text("􀍟")
+                                Image(systemName: "gearshape")
                             })
                         .padding(.horizontal)
                         .padding(.top)
-                }
-                .onAppear {
-                    viewModel.refresh()
-                    print("Clipboard history on appear:", viewModel.history)
-                }
-                if viewModel.history.isEmpty {
-                    Text("No items yet...")
-                        .italic()
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom)
-                } else
-                {
-                    VStack{
-                        //this is the list that displays the data arrays
-                        List(viewModel.history) { item in
-                            ClipObjectView(item: item)
-                                .listRowSeparator(.hidden)
-                        }
-                        .padding(.bottom)
                     }
-                }
-                EmptyView()
-                    .onReceive(timer) { _ in
+                    .onAppear {
                         viewModel.refresh()
-                        viewModel.clearMemory()
+                        print("Clipboard history on appear:", viewModel.history)
                     }
+                    if viewModel.history.isEmpty {
+                        Text("No items yet...")
+                            .italic()
+                            .foregroundStyle(.secondary)
+                            .padding(.bottom)
+                    } else
+                    {
+                        VStack{
+                            //this is the list that displays the data arrays
+                            List(viewModel.history) { item in
+                                ClipObjectView(item: item)
+                                    .listRowSeparator(.hidden)
+                            }
+                            .padding(.bottom)
+                        }
+                    }
+                    EmptyView()
+                        .onReceive(timer) { _ in
+                            viewModel.refresh()
+                            viewModel.clearMemory()
+                        }
+                }
+                //automatically scroll to the top of the list when somehthing new is added
+                .onChange (of: viewModel.history.first?.id, initial: false) { _, newId in
+                    guard let newId else { return }
+                    proxy.scrollTo(newId, anchor: .top)
+                }
             }
         }
     }

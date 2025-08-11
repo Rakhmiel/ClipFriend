@@ -29,7 +29,7 @@ class ClipboardViewModel: ObservableObject {
                 }
             })
         }
-        history.append(contentsOf: newEntries)
+        history.insert(contentsOf: newEntries, at: 0)
     }
     func updateClipboard(selection: ClipboardFetcher.clipboardData) {
         AppendToClipboard(selection: selection)

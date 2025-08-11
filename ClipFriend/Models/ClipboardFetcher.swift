@@ -41,9 +41,11 @@ class ClipboardFetcher: ObservableObject {
         }
         //do potentially blocking work off the main thread
         lastChangeCount = change
+        let stringSnapshot = pasteboard.string(forType: .string)
+        let pasteboardData = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png)
         workerQ.async { [weak self] in guard let self = self else {return}
             
-            if let string = pasteboard.string(forType: .string) {
+            if let string = stringSnapshot {
                 if self.newString == string {
                     return
                 }
@@ -60,23 +62,24 @@ class ClipboardFetcher: ObservableObject {
             }
             //checks if it is an image and checks if its already stored
             // it also compresses the image
-            if let tiff = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
-                autoreleasepool {
-                   if let rep = NSBitmapImageRep(data: tiff),
-                      let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.5]) {
-                       if self.newObject == jpeg {
-                         return
-                     } else {
-                         self.newObject = jpeg
-                         DispatchQueue.main.async {
-                             self.clipboard.append(.image(jpeg))
-                             print("Image appended")
-                         }
-                         return
-                     }
+            workerQ.async { [weak self] in guard let self = self else {return}
+                if let tiff = pasteboardData {
+                    autoreleasepool {
+                        if let rep = NSBitmapImageRep(data: tiff),
+                           let jpeg = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.5]) {
+                            if self.newObject == jpeg {
+                                return
+                            } else {
+                                self.newObject = jpeg
+                                DispatchQueue.main.async {
+                                    self.clipboard.append(.image(jpeg))
+                                    print("Image appended")
+                                }
+                                return
+                            }
+                        }
+                    }
                 }
-            }
-               
             }
         }
     }

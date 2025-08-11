@@ -28,7 +28,7 @@ struct ClipObjectView: View {
             Button {
                 AppendToClipboard(selection: .text(item))
             } label: {
-                Text("􀉁")
+                Image(systemName: "doc.on.doc")
             }
             Spacer()
                 .frame(minWidth: 5)
@@ -43,7 +43,7 @@ struct ClipObjectView: View {
             Button {
                 AppendToClipboard(selection: .image(item))
             } label: {
-                Text("􀉁")
+                Image(systemName: "doc.on.doc")
             }
             Spacer()
                 .frame(minWidth: 5)
