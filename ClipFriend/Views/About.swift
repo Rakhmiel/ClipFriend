@@ -11,7 +11,9 @@ import AppKit
 struct About: View {
     var body: some View {
         VStack(spacing: 8) {
-            Text("Version 1")
+            //reads the version straight from the app bundle (kept in sync with
+            //MARKETING_VERSION in the Xcode project) so this never goes stale again
+            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
                 .font(.headline)
             Text("Made by Ryan Dobron")
             HStack(spacing: 4) {
