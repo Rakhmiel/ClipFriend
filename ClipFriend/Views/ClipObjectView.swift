@@ -18,14 +18,14 @@ struct ClipObjectView: View {
             //filters the input according to its data type
             Group {
                 switch item {
-                case .text(let text, let sensitive, _):
-                    maskedIfNeeded(sensitive: sensitive) { clipObject(item: text) }
-                case .image(let image, let sensitive, _):
-                    maskedIfNeeded(sensitive: sensitive) { clipObject(item: image) }
-                case .file(let ref, let sensitive, _):
-                    maskedIfNeeded(sensitive: sensitive) { clipObject(item: ref, isVideo: false) }
-                case .video(let ref, let sensitive, _):
-                    maskedIfNeeded(sensitive: sensitive) { clipObject(item: ref, isVideo: true) }
+                case .text(let text, let sensitive, let source, _):
+                    maskedIfNeeded(sensitive: sensitive, source: source) { clipObject(item: text) }
+                case .image(let image, let sensitive, let source, _):
+                    maskedIfNeeded(sensitive: sensitive, source: source) { clipObject(item: image) }
+                case .file(let ref, let sensitive, let source, _):
+                    maskedIfNeeded(sensitive: sensitive, source: source) { clipObject(item: ref, isVideo: false) }
+                case .video(let ref, let sensitive, let source, _):
+                    maskedIfNeeded(sensitive: sensitive, source: source) { clipObject(item: ref, isVideo: true) }
                 case .none(_, _):
                     Text("0")
                 }
@@ -41,17 +41,22 @@ struct ClipObjectView: View {
             .contentShape(Rectangle())
             .onHover { hovering in isHovering = hovering }
         }
-    //hides the row's real content behind a placeholder until the user hovers over it -
-    //used for clipboard items password managers mark as sensitive
+    //sensitive items (e.g. passwords) are masked by default, showing only where the content
+    //came from - hovering reveals the actual content (and its normal copy button) the same
+    //way a non-sensitive row would render
     @ViewBuilder
-    private func maskedIfNeeded<Content: View>(sensitive: Bool, @ViewBuilder content: () -> Content) -> some View {
+    private func maskedIfNeeded<Content: View>(sensitive: Bool, source: String?, @ViewBuilder content: () -> Content) -> some View {
         if sensitive && !isHovering {
             HStack {
-                Image(systemName: "eye.slash")
-                Text("Sensitive item — hover to reveal")
-                    .foregroundStyle(.secondary)
-                    .italic()
+                Image(systemName: "lock.fill")
+                if let source {
+                    Text("Securely pasted from \(source)")
+                } else {
+                    Text("Securely copied item")
+                }
             }
+            .foregroundStyle(.secondary)
+            .italic()
         } else {
             content()
         }

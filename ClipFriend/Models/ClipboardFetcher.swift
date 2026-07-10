@@ -25,25 +25,36 @@ struct FileReference: Equatable {
 class ClipboardFetcher: ObservableObject {
     //this is so the program can handle data other than text
     enum clipboardData: Identifiable {
-        case text(String, sensitive: Bool = false, id: UUID = UUID())
-        case image(Data, sensitive: Bool = false, id: UUID = UUID())
-        case file(FileReference, sensitive: Bool = false, id: UUID = UUID())
-        case video(FileReference, sensitive: Bool = false, id: UUID = UUID())
+        case text(String, sensitive: Bool = false, sensitiveSource: String? = nil, id: UUID = UUID())
+        case image(Data, sensitive: Bool = false, sensitiveSource: String? = nil, id: UUID = UUID())
+        case file(FileReference, sensitive: Bool = false, sensitiveSource: String? = nil, id: UUID = UUID())
+        case video(FileReference, sensitive: Bool = false, sensitiveSource: String? = nil, id: UUID = UUID())
         case none(String, id: UUID = UUID())
         var id: UUID {
             switch self {
-            case .text(_, _, let id), .image(_, _, let id),
-                 .file(_, _, let id), .video(_, _, let id), .none(_, let id):
+            case .text(_, _, _, let id), .image(_, _, _, let id),
+                 .file(_, _, _, let id), .video(_, _, _, let id), .none(_, let id):
                 return id
             }
         }
         var isSensitive: Bool {
             switch self {
-            case .text(_, let sensitive, _), .image(_, let sensitive, _),
-                 .file(_, let sensitive, _), .video(_, let sensitive, _):
+            case .text(_, let sensitive, _, _), .image(_, let sensitive, _, _),
+                 .file(_, let sensitive, _, _), .video(_, let sensitive, _, _):
                 return sensitive
             case .none:
                 return false
+            }
+        }
+        //the app the sensitive content was copied from (e.g. "Passwords"), when known -
+        //used to describe the item instead of ever displaying its actual contents
+        var sensitiveSource: String? {
+            switch self {
+            case .text(_, _, let source, _), .image(_, _, let source, _),
+                 .file(_, _, let source, _), .video(_, _, let source, _):
+                return source
+            case .none:
+                return nil
             }
         }
     }
@@ -57,6 +68,21 @@ class ClipboardFetcher: ObservableObject {
     //marker used by password managers (1Password, etc.) to say "this item is sensitive"
     private let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
     private let transientType = NSPasteboard.PasteboardType("org.nspasteboard.TransientType")
+    //convention some apps use to identify who put the data on the pasteboard, as either a
+    //bundle identifier or a plain display name
+    private let sourceType = NSPasteboard.PasteboardType("org.nspasteboard.source")
+
+    //Apple's own Passwords app (verified by inspecting its pasteboard output directly) sets
+    //none of the org.nspasteboard.* marker types above, so it can't be detected that way at
+    //all - this is a fallback allowlist of known password managers, matched against whichever
+    //app was frontmost at the moment of the copy. Extend this list as more apps come up.
+    private let knownPasswordManagerBundleIDs: Set<String> = [
+        "com.apple.Passwords",
+        "com.1password.1password",
+        "com.1password.1password7",
+        "com.agilebits.onepassword7",
+        "com.bitwarden.desktop"
+    ]
 
     @Published var clipboard: [clipboardData] = []
     //this retrieves whatever is on the clipboard
@@ -72,7 +98,17 @@ class ClipboardFetcher: ObservableObject {
         lastChangeCount = change
 
         let types = pasteboard.types ?? []
-        let isSensitive = types.contains(concealedType) || types.contains(transientType)
+        let markedSensitive = types.contains(concealedType) || types.contains(transientType)
+        //whichever app is frontmost at the moment of the copy is almost always the one that
+        //put the content there - this both catches apps like Passwords that don't mark
+        //anything at all, and gives a more accurate source name than the pasteboard's own
+        //(optional, inconsistently-adopted) org.nspasteboard.source convention
+        let frontmostApp = NSWorkspace.shared.frontmostApplication
+        let frontmostIsPasswordManager = knownPasswordManagerBundleIDs.contains(frontmostApp?.bundleIdentifier ?? "")
+        let isSensitive = markedSensitive || frontmostIsPasswordManager
+        let sensitiveSource: String? = isSensitive
+            ? (frontmostApp?.localizedName ?? Self.resolveSourceName(pasteboard.string(forType: sourceType)))
+            : nil
 
         //file/video references are checked first - a Finder file copy often carries an
         //incidental icon bitmap alongside the file URL, which would otherwise get
@@ -80,7 +116,7 @@ class ClipboardFetcher: ObservableObject {
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self],
                                               options: [.urlReadingFileURLsOnly: true]) as? [URL],
            let url = urls.first {
-            handleFileURL(url, sensitive: isSensitive)
+            handleFileURL(url, sensitive: isSensitive, sensitiveSource: sensitiveSource)
             return
         }
 
@@ -105,7 +141,7 @@ class ClipboardFetcher: ObservableObject {
                 {
                     self.newString = string
                     DispatchQueue.main.async {
-                        self.clipboard.append(.text(string, sensitive: isSensitive))
+                        self.clipboard.append(.text(string, sensitive: isSensitive, sensitiveSource: sensitiveSource))
                         print("String appended")
                     }
                     return
@@ -123,7 +159,7 @@ class ClipboardFetcher: ObservableObject {
                             } else {
                                 self.newObject = jpeg
                                 DispatchQueue.main.async {
-                                    self.clipboard.append(.image(jpeg, sensitive: isSensitive))
+                                    self.clipboard.append(.image(jpeg, sensitive: isSensitive, sensitiveSource: sensitiveSource))
                                     print("Image appended")
                                 }
                                 return
@@ -136,7 +172,7 @@ class ClipboardFetcher: ObservableObject {
     }
     //creates a security-scoped bookmark + lightweight thumbnail for a copied file/video -
     //never reads or stores the file's actual contents
-    private func handleFileURL(_ url: URL, sensitive: Bool) {
+    private func handleFileURL(_ url: URL, sensitive: Bool, sensitiveSource: String?) {
         guard url != lastFileURL else { return }
         lastFileURL = url
         workerQ.async { [weak self] in
@@ -173,11 +209,24 @@ class ClipboardFetcher: ObservableObject {
                                      thumbnail: thumbData,
                                      utTypeIdentifier: contentType?.identifier)
             DispatchQueue.main.async {
-                self.clipboard.append(isVideo ? .video(ref, sensitive: sensitive)
-                                               : .file(ref, sensitive: sensitive))
+                self.clipboard.append(isVideo ? .video(ref, sensitive: sensitive, sensitiveSource: sensitiveSource)
+                                               : .file(ref, sensitive: sensitive, sensitiveSource: sensitiveSource))
                 print(isVideo ? "Video appended" : "File appended")
             }
         }
+    }
+    //the org.nspasteboard.source value is either a bundle identifier or a plain display name
+    //depending on the app - resolve bundle identifiers to their real, human-readable app name
+    private static func resolveSourceName(_ raw: String?) -> String? {
+        guard let raw, !raw.isEmpty else { return nil }
+        if raw.contains("."), !raw.contains(" "),
+           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: raw),
+           let bundle = Bundle(url: appURL) {
+            let name = (bundle.infoDictionary?["CFBundleDisplayName"] as? String)
+                ?? (bundle.infoDictionary?["CFBundleName"] as? String)
+            if let name { return name }
+        }
+        return raw
     }
     //decodes a small preview frame straight from an image file on disk - ImageIO only
     //decodes pixels at the requested size, so this stays cheap even for a huge source image

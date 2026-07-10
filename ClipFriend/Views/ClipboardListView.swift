@@ -9,9 +9,12 @@ import SwiftUI
 
 struct ClipboardListView: View {
     @Environment(\.openWindow) private var openWindow
-    //this refreshes it in the background
+    //this refreshes it in the background - fast enough that the frontmost-app check in
+    //ClipboardFetcher (used to attribute sensitive copies, e.g. from Passwords) usually still
+    //sees the right app even if the user switches away quickly after copying. The unchanged
+    //path in retrieveClipboard() returns immediately, so polling this often stays cheap.
     private let timer = Timer
-        .publish(every: 0.5, on: .main, in: .common)
+        .publish(every: 0.15, on: .main, in: .common)
         .autoconnect()
     @StateObject var viewModel = ClipboardViewModel()
     var body: some View {

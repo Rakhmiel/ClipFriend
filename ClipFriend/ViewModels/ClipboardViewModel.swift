@@ -19,14 +19,14 @@ class ClipboardViewModel: ObservableObject {
         let newEntries = refresher.clipboard.filter { entry in
             !history.contains(where: { existing in
                 switch (entry, existing) {
-                case (.text(let s1, _, _), .text(let s2, _, _)):
+                case (.text(let s1, _, _, _), .text(let s2, _, _, _)):
                     return s1 == s2
-                case (.image(let img1, _, _), .image(let img2, _, _)):
+                case (.image(let img1, _, _, _), .image(let img2, _, _, _)):
                     // Compare image data to detect duplicates
                     return img1 == img2
-                case (.file(let f1, _, _), .file(let f2, _, _)):
+                case (.file(let f1, _, _, _), .file(let f2, _, _, _)):
                     return f1.bookmark == f2.bookmark
-                case (.video(let f1, _, _), .video(let f2, _, _)):
+                case (.video(let f1, _, _, _), .video(let f2, _, _, _)):
                     return f1.bookmark == f2.bookmark
                 default:
                     return false

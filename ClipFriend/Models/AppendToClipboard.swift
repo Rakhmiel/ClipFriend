@@ -14,16 +14,16 @@ func AppendToClipboard(selection: ClipboardFetcher.clipboardData) {
     pasteboard.clearContents()
     //puts the user selection on the device clipboard
     switch selection {
-    case .text(let str, _, _):
+    case .text(let str, _, _, _):
         pasteboard.clearContents()
         pasteboard.setString(str, forType: .string)
-    case .image(let image, _, _):
+    case .image(let image, _, _, _):
         // converts it back to an nsImage so it can be pasted
         pasteboard.clearContents()
         if let nsImage = NSImage(data: image) {
             pasteboard.writeObjects([nsImage])
         }
-    case .file(let ref, _, _), .video(let ref, _, _):
+    case .file(let ref, _, _, _), .video(let ref, _, _, _):
         // resolves the security-scoped bookmark and writes the original file's URL back to
         // the pasteboard - never re-reads or duplicates the file's bytes
         pasteboard.clearContents()
