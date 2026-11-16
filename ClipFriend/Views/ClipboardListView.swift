@@ -14,7 +14,7 @@ struct ClipboardListView: View {
     //sees the right app even if the user switches away quickly after copying. The unchanged
     //path in retrieveClipboard() returns immediately, so polling this often stays cheap.
     private let timer = Timer
-        .publish(every: 0.15, on: .main, in: .common)
+        .publish(every: 0.25, on: .main, in: .common)
         .autoconnect()
     @StateObject var viewModel = ClipboardViewModel()
     var body: some View {

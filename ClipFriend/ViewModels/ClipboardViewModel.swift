@@ -16,6 +16,11 @@ class ClipboardViewModel: ObservableObject {
     //this refreshes the clipboard data when called
     func refresh() {
         refresher.retrieveClipboard()
+        // nothing new on the pasteboard (the overwhelmingly common case): bail out before
+        // touching any @Published property. Assigning to one - even insert(contentsOf: [])
+        // or removeAll() on an already-empty array - fires objectWillChange, which made the
+        // whole list view re-render on every timer tick, forever.
+        guard !refresher.clipboard.isEmpty else { return }
         let newEntries = refresher.clipboard.filter { entry in
             !history.contains(where: { existing in
                 switch (entry, existing) {
@@ -52,9 +57,10 @@ class ClipboardViewModel: ObservableObject {
         refresher.clear()
     }
     func clearMemory() {
+        // newest items are inserted at index 0, so the oldest is the last element
         if history.count > Globals.maxItems
         {
-            history.removeFirst()
+            history.removeLast()
         }
     }
 }
