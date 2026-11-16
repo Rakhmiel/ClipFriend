@@ -1,7 +1,7 @@
 # ClipFriend Support
 
-**Version:** 1.0  
-**Last Updated:** August 2025
+**Version:** 2.0  
+**Last Updated:** November 16th 2026
 
 Need help? Email: **rakhmieldev@gmail.com**
 Or text me on Telegram: **@rakhmieldev**
